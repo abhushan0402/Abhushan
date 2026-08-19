@@ -1,0 +1,51 @@
+/**
+ * Client-side role -> permission mapping. The API only returns the admin's `role`;
+ * the UI derives the permission set from that role using this table.
+ */
+export const ROLE_PERMISSIONS = {
+  superadmin: [
+    "dashboard:view",
+    "products:view",
+    "products:manage",
+    "categories:manage",
+    "inventory:manage",
+    "orders:view",
+    "orders:manage",
+    "customers:view",
+    "customers:manage",
+    "billing:view",
+    "billing:manage",
+    "offers:manage",
+    "notifications:manage",
+    "users:manage",
+  ],
+  admin: [
+    "dashboard:view",
+    "products:view",
+    "products:manage",
+    "categories:manage",
+    "inventory:manage",
+    "orders:view",
+    "orders:manage",
+    "customers:view",
+    "customers:manage",
+    "billing:view",
+    "billing:manage",
+    "offers:manage",
+    "notifications:manage",
+  ],
+  manager: [
+    "dashboard:view",
+    "products:view",
+    "products:manage",
+    "categories:manage",
+    "inventory:manage",
+    "orders:view",
+    "orders:manage",
+    "customers:view",
+    "billing:view",
+    "offers:manage",
+    "notifications:manage",
+  ],
+  staff: ["dashboard:view", "products:view", "orders:view", "customers:view", "billing:view"],
+};
