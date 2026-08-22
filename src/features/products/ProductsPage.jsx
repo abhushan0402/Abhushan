@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Avatar, Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Avatar, Button, Chip, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import DiamondOutlinedIcon from "@mui/icons-material/DiamondOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -17,6 +17,15 @@ import { useAuth } from "../../auth/useAuth";
 import { formatCurrency } from "../../utils/format";
 import { useSnackbar } from "notistack";
 
+// Single source of truth for the tag filter dropdown and the Tags column - each
+// chip only renders when its field is actually true on the product.
+const PRODUCT_TAGS = [
+  { field: "isTrending", filterValue: "trending", label: "Trending", color: "warning" },
+  { field: "isFeatured", filterValue: "featured", label: "Featured", color: "info" },
+  { field: "isBestSeller", filterValue: "bestseller", label: "Best seller", color: "success" },
+  { field: "isNewArrival", filterValue: "newarrival", label: "New arrival", color: "primary" },
+];
+
 export default function ProductsPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
@@ -30,7 +39,10 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get("categoryId") ?? "all");
   const [subCategoryFilter, setSubCategoryFilter] = useState(searchParams.get("subCategoryId") ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const activeTag = PRODUCT_TAGS.find((tag) => tag.filterValue === tagFilter);
 
   const table = useServerTable(useProducts, {
     sortBy: "name",
@@ -39,6 +51,7 @@ export default function ProductsPage() {
       categoryId: categoryFilter === "all" ? undefined : categoryFilter,
       subCategoryId: subCategoryFilter === "all" ? undefined : subCategoryFilter,
       isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+      ...(activeTag && { [activeTag.field]: true }),
     },
   });
 
@@ -104,6 +117,20 @@ export default function ProductsPage() {
       flex: 0.7,
       minWidth: 100,
       renderCell: (params) => <StatusChip status={params.row.isActive === false ? "inactive" : "active"} />,
+    },
+    {
+      field: "tags",
+      headerName: "Tags",
+      flex: 0.8,
+      minWidth: 160,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", alignItems: "center", height: "100%", py: 0.5 }}>
+          {PRODUCT_TAGS.filter((tag) => params.row[tag.field]).map((tag) => (
+            <Chip key={tag.field} size="small" label={tag.label} color={tag.color} variant="outlined" />
+          ))}
+        </Stack>
+      ),
     },
     ...(canManage
       ? [
@@ -196,6 +223,14 @@ export default function ProductsPage() {
               <MenuItem value="all">All status</MenuItem>
               <MenuItem value="active">Active</MenuItem>
               <MenuItem value="inactive">Inactive</MenuItem>
+            </TextField>
+            <TextField select size="small" label="Tag" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} sx={{ minWidth: 140 }}>
+              <MenuItem value="all">All tags</MenuItem>
+              {PRODUCT_TAGS.map((tag) => (
+                <MenuItem key={tag.filterValue} value={tag.filterValue}>
+                  {tag.label}
+                </MenuItem>
+              ))}
             </TextField>
           </>
         }

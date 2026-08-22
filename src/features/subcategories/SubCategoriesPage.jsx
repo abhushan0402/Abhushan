@@ -67,6 +67,7 @@ export default function SubCategoriesPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema), defaultValues: emptyValues });
   const selectedImageFile = watch("image")?.[0];
@@ -246,6 +247,7 @@ export default function SubCategoriesPage() {
             />
             <ImagePickerField
               register={register}
+              setValue={setValue}
               name="image"
               selectedFile={selectedImageFile}
               existingImageUrl={editing?.image}

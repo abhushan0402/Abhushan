@@ -17,33 +17,33 @@ import { useSubCategories } from "../subcategories/api";
 // catalogue data confirms this - imported products are created without a weight).
 const UNWEIGHED_METAL_TYPES = ["925-imported"];
 
-const schema = z
-  .object({
-    name: z.string().min(2, "Product name is required"),
-    sku: z.string().min(2, "SKU is required"),
-    categoryId: z.string().min(1, "Select a category"),
-    subCategoryId: z.string().min(1, "Select a subcategory"),
-    metalType: z.string().min(1, "Metal type is required"),
-    gender: z.string().min(1, "Gender is required"),
-    productType: z.string().min(1, "Product type is required"),
-    image: z.any().optional(),
-    previewImage1: z.any().optional(),
-    previewImage2: z.any().optional(),
-    previewImage3: z.any().optional(),
-    description: z.string().optional(),
-    weight: z.coerce.number().min(0, "Weight can't be negative").optional(),
-    purity: z.string().min(1, "Purity is required"),
-    basePrice: z.coerce.number().positive("Price must be greater than 0"),
-    stock: z.coerce.number().min(0, "Stock can't be negative"),
-    isBestSeller: z.boolean(),
-    isFeatured: z.boolean(),
-    isTrending: z.boolean(),
-    isActive: z.boolean(),
-  })
-  .refine((data) => UNWEIGHED_METAL_TYPES.includes(data.metalType) || (data.weight ?? 0) > 0, {
-    message: "Weight must be greater than 0",
-    path: ["weight"],
-  });
+const METAL_TYPE_OPTIONS = ["gold", "silver", "925-imported"];
+const GENDER_OPTIONS = ["men", "women", "kids", "gifting"];
+
+// Only name/category/subcategory are mandatory - everything else is optional.
+const schema = z.object({
+  name: z.string().min(2, "Product name is required"),
+  sku: z.string().optional(),
+  categoryId: z.string().min(1, "Select a category"),
+  subCategoryId: z.string().min(1, "Select a subcategory"),
+  metalType: z.string().optional(),
+  gender: z.string().optional(),
+  productType: z.string().optional(),
+  image: z.any().optional(),
+  previewImage1: z.any().optional(),
+  previewImage2: z.any().optional(),
+  previewImage3: z.any().optional(),
+  description: z.string().optional(),
+  weight: z.coerce.number().min(0, "Weight can't be negative").optional(),
+  purity: z.coerce.number().min(0, "Purity can't be negative").optional(),
+  basePrice: z.coerce.number().min(0, "Price can't be negative").optional(),
+  stock: z.coerce.number().min(0, "Stock can't be negative").optional(),
+  isBestSeller: z.boolean(),
+  isFeatured: z.boolean(),
+  isTrending: z.boolean(),
+  isNewArrival: z.boolean(),
+  isActive: z.boolean(),
+});
 
 const emptyDefaults = {
   name: "",
@@ -61,6 +61,7 @@ const emptyDefaults = {
   isBestSeller: false,
   isFeatured: false,
   isTrending: false,
+  isNewArrival: false,
   isActive: true,
 };
 
@@ -82,6 +83,7 @@ export default function ProductFormPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({ resolver: zodResolver(schema), defaultValues: emptyDefaults });
 
@@ -116,6 +118,7 @@ export default function ProductFormPage() {
         isBestSeller: product.isBestSeller ?? false,
         isFeatured: product.isFeatured ?? false,
         isTrending: product.isTrending ?? false,
+        isNewArrival: product.isNewArrival ?? false,
         isActive: product.isActive ?? true,
       });
     }
@@ -138,15 +141,11 @@ export default function ProductFormPage() {
   });
 
   const onSubmit = (values) => {
-    const { image, previewImage1, previewImage2, previewImage3, weight, ...rest } = values;
-    const payload = { ...rest };
+    const { image, previewImage1, previewImage2, previewImage3, ...payload } = values;
     // Thumbnail first, then up to 3 preview images - same order the gallery below
     // the main image should render them in.
     const imageFiles = [image?.[0], previewImage1?.[0], previewImage2?.[0], previewImage3?.[0]].filter(Boolean);
     if (imageFiles.length) payload.images = imageFiles;
-    if (!UNWEIGHED_METAL_TYPES.includes(values.metalType)) {
-      payload.weight = weight;
-    }
     if (isEdit) {
       updateProduct.mutate({ id, data: payload });
     } else {
@@ -210,23 +209,43 @@ export default function ProductFormPage() {
 
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
+              select
               label="Metal type"
               fullWidth
-              placeholder="gold, silver, 925-imported..."
+              defaultValue=""
               error={Boolean(errors.metalType)}
               helperText={errors.metalType?.message}
               {...register("metalType")}
-            />
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {METAL_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
+              select
               label="Gender"
               fullWidth
-              placeholder="men, women, kids, gifting..."
+              defaultValue=""
               error={Boolean(errors.gender)}
               helperText={errors.gender?.message}
               {...register("gender")}
-            />
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {GENDER_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
@@ -241,11 +260,28 @@ export default function ProductFormPage() {
 
           {showWeight && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField label="Weight (grams)" type="number" fullWidth error={Boolean(errors.weight)} helperText={errors.weight?.message} {...register("weight")} />
+              <TextField
+                label="Weight (grams)"
+                type="number"
+                fullWidth
+                slotProps={{ htmlInput: { step: "any" } }}
+                error={Boolean(errors.weight)}
+                helperText={errors.weight?.message}
+                {...register("weight")}
+              />
             </Grid>
           )}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <TextField label="Purity" fullWidth placeholder="22K, 925..." error={Boolean(errors.purity)} helperText={errors.purity?.message} {...register("purity")} />
+            <TextField
+              label="Purity"
+              type="number"
+              fullWidth
+              placeholder="91.6, 92.5, 99.9..."
+              slotProps={{ htmlInput: { step: "any" } }}
+              error={Boolean(errors.purity)}
+              helperText={errors.purity?.message}
+              {...register("purity")}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField label="Base price (₹)" type="number" fullWidth error={Boolean(errors.basePrice)} helperText={errors.basePrice?.message} {...register("basePrice")} />
@@ -260,6 +296,7 @@ export default function ProductFormPage() {
             </Typography>
             <ImagePickerField
               register={register}
+              setValue={setValue}
               name="image"
               selectedFile={selectedImageFile}
               existingImageUrl={product?.images?.[0]}
@@ -274,6 +311,7 @@ export default function ProductFormPage() {
             <Stack spacing={1.5}>
               <ImagePickerField
                 register={register}
+                setValue={setValue}
                 name="previewImage1"
                 selectedFile={selectedPreviewFile1}
                 existingImageUrl={product?.images?.[1]}
@@ -281,6 +319,7 @@ export default function ProductFormPage() {
               />
               <ImagePickerField
                 register={register}
+                setValue={setValue}
                 name="previewImage2"
                 selectedFile={selectedPreviewFile2}
                 existingImageUrl={product?.images?.[2]}
@@ -288,6 +327,7 @@ export default function ProductFormPage() {
               />
               <ImagePickerField
                 register={register}
+                setValue={setValue}
                 name="previewImage3"
                 selectedFile={selectedPreviewFile3}
                 existingImageUrl={product?.images?.[3]}
@@ -302,10 +342,56 @@ export default function ProductFormPage() {
 
           <Grid size={12}>
             <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
-              <FormControlLabel control={<Checkbox {...register("isBestSeller")} />} label="Best seller" />
-              <FormControlLabel control={<Checkbox {...register("isFeatured")} />} label="Featured" />
-              <FormControlLabel control={<Checkbox {...register("isTrending")} />} label="Trending" />
-              <FormControlLabel control={<Switch {...register("isActive")} defaultChecked />} label="Active" />
+              <Controller
+                name="isBestSeller"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Best seller"
+                  />
+                )}
+              />
+              <Controller
+                name="isFeatured"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Featured"
+                  />
+                )}
+              />
+              <Controller
+                name="isTrending"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Trending"
+                  />
+                )}
+              />
+              <Controller
+                name="isNewArrival"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="New arrival"
+                  />
+                )}
+              />
+              <Controller
+                name="isActive"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={<Switch checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                    label="Active"
+                  />
+                )}
+              />
             </Stack>
           </Grid>
 

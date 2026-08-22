@@ -53,6 +53,7 @@ export default function CategoriesPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -189,6 +190,7 @@ export default function CategoriesPage() {
             />
             <ImagePickerField
               register={register}
+              setValue={setValue}
               name="image"
               selectedFile={selectedImageFile}
               existingImageUrl={editing?.image}

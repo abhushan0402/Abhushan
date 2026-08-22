@@ -32,13 +32,11 @@ function normalizeProduct(row) {
   };
 }
 
-// The list endpoint's documented response schema is a generic object (no fixed
-// field names) - same situation as categories/subcategories. Follows the same
-// `<resource>` key naming convention confirmed for those.
+// Confirmed shape: { success, message, data: { products: [...], pagination: { total, page, limit, totalPages } } }.
 function normalizeList(body) {
   const payload = body?.data ?? {};
   const rows = payload.products ?? payload.items ?? payload.rows ?? (Array.isArray(payload) ? payload : []);
-  const total = payload.total ?? payload.totalCount ?? payload.count ?? rows.length;
+  const total = payload.pagination?.total ?? payload.total ?? payload.totalCount ?? payload.count ?? rows.length;
   return { data: rows.map(normalizeProduct), total };
 }
 
