@@ -6,6 +6,7 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import StarOutlineOutlinedIcon from "@mui/icons-material/StarOutlineOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 
@@ -35,6 +36,7 @@ export const navSections = [
     title: "Engagement",
     items: [
       { label: "Offers", path: "/offers", icon: LocalOfferOutlinedIcon, permission: "offers:manage" },
+      { label: "Reviews", path: "/reviews", icon: StarOutlineOutlinedIcon, permission: "products:view" },
       { label: "Notifications", path: "/notifications", icon: NotificationsNoneOutlinedIcon, permission: "notifications:manage" },
     ],
   },

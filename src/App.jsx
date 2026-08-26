@@ -14,6 +14,7 @@ import OrderDetailPage from "./features/orders/OrderDetailPage";
 import CustomersPage from "./features/customers/CustomersPage";
 import BillingPage from "./features/billing/BillingPage";
 import OffersPage from "./features/offers/OffersPage";
+import ReviewsPage from "./features/reviews/ReviewsPage";
 import NotificationsPage from "./features/notifications/NotificationsPage";
 import UsersPage from "./features/users/UsersPage";
 
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="offers" element={<OffersPage />} />
+            <Route path="reviews" element={<ReviewsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="users" element={<UsersPage />} />
           </Route>
