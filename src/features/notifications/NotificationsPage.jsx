@@ -47,6 +47,17 @@ const schema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or fewer"),
   body: z.string().min(1, "Message is required").max(1000, "Message must be 1000 characters or fewer"),
   type: z.enum(NOTIFICATION_TYPES, { message: "Select a type" }),
+  // The API's "data" field has no fixed shape (additionalProperties: {}) - it's
+  // freeform, so it's entered as JSON text here and parsed before submitting.
+  data: z.string().optional().refine((value) => {
+    if (!value) return true;
+    try {
+      JSON.parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Must be valid JSON"),
 });
 
 export default function NotificationsPage() {
@@ -72,7 +83,7 @@ export default function NotificationsPage() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system" } });
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system", data: "" } });
 
   const createNotification = useNotifications.useCreate({
     onSuccess: () => {
@@ -84,8 +95,14 @@ export default function NotificationsPage() {
   });
 
   const openCreate = () => {
-    reset({ title: "", body: "", type: "system" });
+    reset({ title: "", body: "", type: "system", data: "" });
     setCreateOpen(true);
+  };
+
+  const onSubmitNotification = (values) => {
+    const { data: rawData, ...payload } = values;
+    if (rawData) payload.data = JSON.parse(rawData);
+    createNotification.mutate(payload);
   };
 
   return (
@@ -201,7 +218,7 @@ export default function NotificationsPage() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
             This creates a test notification for your own admin account, not a broadcast to customers.
           </Typography>
-          <Stack spacing={2.5} component="form" id="notification-form" onSubmit={handleSubmit((values) => createNotification.mutate(values))}>
+          <Stack spacing={2.5} component="form" id="notification-form" onSubmit={handleSubmit(onSubmitNotification)}>
             <TextField label="Title" fullWidth error={Boolean(errors.title)} helperText={errors.title?.message} {...register("title")} />
             <TextField
               label="Message"
@@ -224,6 +241,16 @@ export default function NotificationsPage() {
                   ))}
                 </TextField>
               )}
+            />
+            <TextField
+              label="Extra data (JSON, optional)"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder='{"orderId": "..."}'
+              error={Boolean(errors.data)}
+              helperText={errors.data?.message ?? "Freeform metadata attached to the notification - must be valid JSON if provided."}
+              {...register("data")}
             />
           </Stack>
         </DialogContent>
