@@ -1,13 +1,21 @@
 import { Chip } from "@mui/material";
 
 const STATUS_STYLES = {
-  // order status
+  // order status (mock, lowercase)
   pending: { color: "warning", label: "Pending" },
   processing: { color: "info", label: "Processing" },
   shipped: { color: "info", label: "Shipped" },
   delivered: { color: "success", label: "Delivered" },
   cancelled: { color: "error", label: "Cancelled" },
   refunded: { color: "default", label: "Refunded" },
+  // real order status (from the API - exact casing, distinct from the mock keys above)
+  Placed: { color: "info", label: "Placed" },
+  Confirmed: { color: "info", label: "Confirmed" },
+  Packed: { color: "info", label: "Packed" },
+  Shipped: { color: "info", label: "Shipped" },
+  "Out for Delivery": { color: "warning", label: "Out for Delivery" },
+  Delivered: { color: "success", label: "Delivered" },
+  Cancelled: { color: "error", label: "Cancelled" },
   // payment status
   paid: { color: "success", label: "Paid" },
   unpaid: { color: "error", label: "Unpaid" },

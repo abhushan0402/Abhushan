@@ -19,11 +19,9 @@ import {
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusChip } from "../../components/common/StatusChip";
-import { useOrders } from "./api";
+import { useOrders, ORDER_STATUS_OPTIONS } from "./api";
 import { useAuth } from "../../auth/useAuth";
 import { formatCurrency, formatDateTime } from "../../utils/format";
-
-const STATUS_OPTIONS = ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"];
 
 export default function OrderDetailPage() {
   const { id } = useParams();
@@ -33,8 +31,9 @@ export default function OrderDetailPage() {
   const { enqueueSnackbar } = useSnackbar();
 
   const { data: order, isLoading } = useOrders.useDetail(id);
-  const updateOrder = useOrders.usePatch({
+  const updateStatus = useOrders.useUpdateStatus({
     onSuccess: () => enqueueSnackbar("Order status updated", { variant: "success" }),
+    onError: () => enqueueSnackbar("Failed to update order status", { variant: "error" }),
   });
 
   if (isLoading) {
@@ -47,11 +46,13 @@ export default function OrderDetailPage() {
 
   if (!order) return null;
 
+  const address = order.deliveryAddress ?? {};
+
   return (
     <>
       <PageHeader
-        title={`Order ${order.orderNumber}`}
-        subtitle={`Placed on ${formatDateTime(order.placedAt)}`}
+        title={`Order #${order.id?.slice(-8).toUpperCase()}`}
+        subtitle={`Placed on ${formatDateTime(order.createdAt)}`}
         action={
           <Button startIcon={<ArrowBackOutlinedIcon />} color="inherit" onClick={() => navigate("/orders")}>
             Back to orders
@@ -69,20 +70,22 @@ export default function OrderDetailPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Product</TableCell>
-                  <TableCell>SKU</TableCell>
                   <TableCell align="center">Qty</TableCell>
-                  <TableCell align="right">Unit price</TableCell>
+                  <TableCell align="right">Weight (g)</TableCell>
+                  <TableCell>Purity</TableCell>
+                  <TableCell align="right">Price/unit</TableCell>
                   <TableCell align="right">Subtotal</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {order.items.map((item) => (
-                  <TableRow key={item.id}>
+                {(order.items ?? []).map((item, index) => (
+                  <TableRow key={item.productId ?? index}>
                     <TableCell>{item.productName}</TableCell>
-                    <TableCell>{item.sku}</TableCell>
                     <TableCell align="center">{item.quantity}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.unitPrice)}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.unitPrice * item.quantity)}</TableCell>
+                    <TableCell align="right">{item.weightGrams ?? "—"}</TableCell>
+                    <TableCell>{item.purity ?? "—"}</TableCell>
+                    <TableCell align="right">{formatCurrency(item.pricePerUnit)}</TableCell>
+                    <TableCell align="right">{formatCurrency((item.pricePerUnit ?? 0) * (item.quantity ?? 0))}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -92,34 +95,23 @@ export default function OrderDetailPage() {
 
             <Stack spacing={1} sx={{ maxWidth: 280, ml: "auto" }}>
               <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Subtotal</Typography>
-                <Typography variant="body2">{formatCurrency(order.subtotal)}</Typography>
-              </Stack>
-              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Discount</Typography>
-                <Typography variant="body2">-{formatCurrency(order.discount)}</Typography>
-              </Stack>
-              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                <Typography variant="body2" color="text.secondary">Tax</Typography>
-                <Typography variant="body2">{formatCurrency(order.tax)}</Typography>
-              </Stack>
-              <Divider />
-              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Total</Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{formatCurrency(order.total)}</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{formatCurrency(order.totalAmount)}</Typography>
               </Stack>
             </Stack>
           </Card>
 
           <Card sx={{ p: 2.5, mt: 2.5 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
-              Shipping address
+              Delivery address
             </Typography>
-            <Typography variant="body2">{order.shippingAddress.line1}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{address.fullName}</Typography>
+            <Typography variant="body2" color="text.secondary">{address.mobile}</Typography>
+            <Typography variant="body2">{address.addressLine1}</Typography>
+            {address.addressLine2 && <Typography variant="body2">{address.addressLine2}</Typography>}
             <Typography variant="body2">
-              {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+              {address.city}, {address.state} {address.pincode}
             </Typography>
-            <Typography variant="body2">{order.shippingAddress.country}</Typography>
           </Card>
         </Grid>
 
@@ -130,20 +122,7 @@ export default function OrderDetailPage() {
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>{order.customerName}</Typography>
             <Typography variant="body2" color="text.secondary">{order.customerEmail}</Typography>
-          </Card>
-
-          <Card sx={{ p: 2.5, mb: 2.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
-              Payment
-            </Typography>
-            <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
-              <Typography variant="body2" color="text.secondary">Method</Typography>
-              <Typography variant="body2">{order.paymentMethod}</Typography>
-            </Stack>
-            <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">Status</Typography>
-              <StatusChip status={order.paymentStatus} />
-            </Stack>
+            <Typography variant="body2" color="text.secondary">{order.customerPhone}</Typography>
           </Card>
 
           <Card sx={{ p: 2.5 }}>
@@ -154,17 +133,17 @@ export default function OrderDetailPage() {
               <TextField
                 select
                 fullWidth
-                value={order.status}
-                onChange={(e) => updateOrder.mutate({ id: order.id, data: { status: e.target.value } })}
+                value={order.orderStatus}
+                onChange={(e) => updateStatus.mutate({ id: order.id, data: { orderStatus: e.target.value } })}
               >
-                {STATUS_OPTIONS.map((s) => (
+                {ORDER_STATUS_OPTIONS.map((s) => (
                   <MenuItem key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                    {s}
                   </MenuItem>
                 ))}
               </TextField>
             ) : (
-              <StatusChip status={order.status} />
+              <StatusChip status={order.orderStatus} />
             )}
           </Card>
         </Grid>

@@ -4,47 +4,42 @@ import { MenuItem, TextField, Typography } from "@mui/material";
 import { DataGridCard } from "../../components/common/DataGridCard";
 import { StatusChip } from "../../components/common/StatusChip";
 import { useServerTable } from "../../hooks/useServerTable";
-import { useOrders } from "./api";
+import { useOrders, ORDER_STATUS_OPTIONS } from "./api";
 import { formatCurrency, formatDate } from "../../utils/format";
-
-const STATUS_OPTIONS = ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"];
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("all");
 
   const table = useServerTable(useOrders, {
-    sortBy: "placedAt",
-    sortDir: "desc",
     extraParams: { status: statusFilter === "all" ? undefined : statusFilter },
   });
 
   const columns = [
-    { field: "orderNumber", headerName: "Order", flex: 0.8, minWidth: 120 },
+    {
+      field: "id",
+      headerName: "Order",
+      flex: 0.8,
+      minWidth: 120,
+      renderCell: (params) => `#${params.row.id?.slice(-8).toUpperCase()}`,
+    },
     { field: "customerName", headerName: "Customer", flex: 1, minWidth: 170 },
     {
-      field: "total",
+      field: "totalAmount",
       headerName: "Amount",
       flex: 0.7,
       minWidth: 110,
-      renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(params.row.total)}</Typography>,
+      renderCell: (params) => <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(params.row.totalAmount)}</Typography>,
     },
     {
-      field: "paymentStatus",
-      headerName: "Payment",
-      flex: 0.7,
-      minWidth: 120,
-      renderCell: (params) => <StatusChip status={params.row.paymentStatus} />,
-    },
-    {
-      field: "status",
+      field: "orderStatus",
       headerName: "Status",
-      flex: 0.7,
-      minWidth: 120,
-      renderCell: (params) => <StatusChip status={params.row.status} />,
+      flex: 0.8,
+      minWidth: 140,
+      renderCell: (params) => <StatusChip status={params.row.orderStatus} />,
     },
     {
-      field: "placedAt",
+      field: "createdAt",
       headerName: "Placed on",
       flex: 0.7,
       minWidth: 120,
@@ -72,11 +67,11 @@ export default function OrdersPage() {
       searchPlaceholder="Search by order number or customer..."
       onRowClick={(params) => navigate(`/orders/${params.id}`)}
       toolbarExtra={
-        <TextField select size="small" label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 150 }}>
+        <TextField select size="small" label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 170 }}>
           <MenuItem value="all">All status</MenuItem>
-          {STATUS_OPTIONS.map((s) => (
+          {ORDER_STATUS_OPTIONS.map((s) => (
             <MenuItem key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+              {s}
             </MenuItem>
           ))}
         </TextField>

@@ -29,9 +29,9 @@ export function Header({ onMenuClick }) {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
 
-  const { data } = useNotifications.useList({ pageSize: 5, sortBy: "createdAt", sortDir: "desc" });
+  const { data } = useNotifications.useList({ pageSize: 5 });
   const notifications = data?.data ?? [];
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = data?.unreadCount ?? notifications.filter((n) => !n.isRead).length;
 
   return (
     <Stack direction="row" spacing={2} sx={{ alignItems: "center", px: { xs: 2, md: 0 }, pt: 2, pb: 1.5 }}>
@@ -80,11 +80,11 @@ export function Header({ onMenuClick }) {
             sx={{ whiteSpace: "normal", alignItems: "flex-start", py: 1.25 }}
           >
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: n.read ? 500 : 700 }}>
+              <Typography variant="body2" sx={{ fontWeight: n.isRead ? 500 : 700 }}>
                 {n.title}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                {n.message}
+                {n.body}
               </Typography>
               <Typography variant="caption" color="text.disabled">
                 {formatRelativeTime(n.createdAt)}
