@@ -184,6 +184,8 @@ export default function ProductsPage() {
         search={table.search}
         onSearchChange={table.setSearch}
         searchPlaceholder="Search products by name, SKU, material..."
+        getRowHeight={() => "auto"}
+        getEstimatedRowHeight={() => 68}
         toolbarExtra={
           <>
             <TextField

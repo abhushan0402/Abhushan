@@ -74,7 +74,7 @@ export default function LoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "radial-gradient(circle at top left, #FBE8E2 0%, #FBF2EF 45%, #FBF2EF 100%)",
+        background: "radial-gradient(circle at top left, #f5edf7 0%, #f8f5ef 45%, #f8f5ef 100%)",
         p: 2,
       }}
     >

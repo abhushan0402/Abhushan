@@ -24,6 +24,8 @@ export function DataGridCard({
   onRowClick,
   getRowId,
   autoHeight = true,
+  getRowHeight,
+  getEstimatedRowHeight,
 }) {
   const paginationModel = useMemo(() => ({ page, pageSize }), [page, pageSize]);
 
@@ -97,6 +99,8 @@ export function DataGridCard({
         disableRowSelectionOnClick
         disableColumnMenu
         autoHeight={autoHeight}
+        getRowHeight={getRowHeight}
+        getEstimatedRowHeight={getEstimatedRowHeight}
         onRowClick={onRowClick}
         sx={{
           border: "none",
