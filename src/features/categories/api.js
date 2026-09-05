@@ -57,7 +57,7 @@ function useCreate(options = {}) {
   return useMutation({
     mutationFn: async (payload) => {
       const { data: body } = await httpClient.post("/admin/categories", toFormData(payload), MULTIPART_HEADERS);
-      return normalizeCategory(body?.data);
+      return { ...normalizeCategory(body?.data), message: body?.message };
     },
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {
@@ -72,7 +72,7 @@ function useUpdate(options = {}) {
   return useMutation({
     mutationFn: async ({ id, data }) => {
       const { data: body } = await httpClient.patch(`/admin/categories/${id}`, toFormData(data), MULTIPART_HEADERS);
-      return normalizeCategory(body?.data);
+      return { ...normalizeCategory(body?.data), message: body?.message };
     },
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {

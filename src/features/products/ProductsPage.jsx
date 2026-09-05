@@ -66,11 +66,11 @@ export default function ProductsPage() {
   );
 
   const removeProduct = useProducts.useRemove({
-    onSuccess: () => {
-      enqueueSnackbar("Product deleted", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Product deleted", { variant: "success" });
       setDeleteTarget(null);
     },
-    onError: () => enqueueSnackbar("Failed to delete product", { variant: "error" }),
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to delete product", { variant: "error" }),
   });
 
   const columns = [

@@ -125,19 +125,19 @@ export default function ProductFormPage() {
   }, [product, reset]);
 
   const createProduct = useProducts.useCreate({
-    onSuccess: () => {
-      enqueueSnackbar("Product created", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Product created", { variant: "success" });
       navigate("/products");
     },
-    onError: () => enqueueSnackbar("Failed to create product", { variant: "error" }),
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to create product", { variant: "error" }),
   });
 
   const updateProduct = useProducts.useUpdate({
-    onSuccess: () => {
-      enqueueSnackbar("Product updated", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Product updated", { variant: "success" });
       navigate("/products");
     },
-    onError: () => enqueueSnackbar("Failed to update product", { variant: "error" }),
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to update product", { variant: "error" }),
   });
 
   const onSubmit = (values) => {

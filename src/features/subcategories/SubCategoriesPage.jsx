@@ -73,22 +73,25 @@ export default function SubCategoriesPage() {
   const selectedImageFile = watch("image")?.[0];
 
   const createSubCategory = useSubCategories.useCreate({
-    onSuccess: () => {
-      enqueueSnackbar("Subcategory created", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Subcategory created", { variant: "success" });
       setEditing(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to create subcategory", { variant: "error" }),
   });
   const updateSubCategory = useSubCategories.useUpdate({
-    onSuccess: () => {
-      enqueueSnackbar("Subcategory updated", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Subcategory updated", { variant: "success" });
       setEditing(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to update subcategory", { variant: "error" }),
   });
   const removeSubCategory = useSubCategories.useRemove({
-    onSuccess: () => {
-      enqueueSnackbar("Subcategory deleted", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Subcategory deleted", { variant: "success" });
       setDeleteTarget(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to delete subcategory", { variant: "error" }),
   });
 
   const openCreate = () => {

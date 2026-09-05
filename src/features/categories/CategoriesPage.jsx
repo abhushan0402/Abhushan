@@ -62,22 +62,25 @@ export default function CategoriesPage() {
   const selectedImageFile = watch("image")?.[0];
 
   const createCategory = useCategories.useCreate({
-    onSuccess: () => {
-      enqueueSnackbar("Category created", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Category created", { variant: "success" });
       setEditing(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to create category", { variant: "error" }),
   });
   const updateCategory = useCategories.useUpdate({
-    onSuccess: () => {
-      enqueueSnackbar("Category updated", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Category updated", { variant: "success" });
       setEditing(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to update category", { variant: "error" }),
   });
   const removeCategory = useCategories.useRemove({
-    onSuccess: () => {
-      enqueueSnackbar("Category deleted", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Category deleted", { variant: "success" });
       setDeleteTarget(null);
     },
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to delete category", { variant: "error" }),
   });
 
   const openCreate = () => {
