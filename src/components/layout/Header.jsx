@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
   Avatar,
   Badge,
@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useAuth } from "../../auth/useAuth";
@@ -26,6 +27,7 @@ export function Header({ onMenuClick }) {
   const isMobile = useMediaQuery("(max-width:900px)");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
 
@@ -33,8 +35,19 @@ export function Header({ onMenuClick }) {
   const notifications = data?.data ?? [];
   const unreadCount = data?.unreadCount ?? notifications.filter((n) => !n.isRead).length;
 
+  const showBack = location.pathname !== "/";
+
   return (
     <Stack direction="row" spacing={2} sx={{ alignItems: "center", px: { xs: 2, md: 0 }, pt: 2, pb: 1.5 }}>
+      {showBack && (
+        <IconButton
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+          sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider" }}
+        >
+          <ArrowBackOutlinedIcon fontSize="small" />
+        </IconButton>
+      )}
       {isMobile && (
         <IconButton onClick={onMenuClick} sx={{ bgcolor: "background.paper" }}>
           <MenuOutlinedIcon />
