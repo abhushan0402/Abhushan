@@ -1,0 +1,105 @@
+name: Deploy Admin to EC2
+
+# Two-stage pipeline:
+#   1. build-check runs entirely on GitHub's runner (checkout, npm ci, lint,
+#      vite build) with NO access to EC2 at all. It's the fast-fail gate — if
+#      the code doesn't build cleanly here, we never even attempt to touch
+#      the production server.
+#   2. deploy only runs if build-check succeeds. It SSHes into EC2 and
+#      re-runs the same build there (git pull, npm ci, vite build into a
+#      temp dir), then atomically swaps it into place. See
+#      DEPLOYMENT.md for the full rollback/troubleshooting story.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {} # lets you manually re-trigger from the Actions tab without a new commit
+
+concurrency:
+  group: deploy-admin
+  cancel-in-progress: false # never interrupt a deploy that's already mid-flight
+
+jobs:
+  build-check:
+    name: Build check (CI runner, no EC2 access)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy to EC2
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load deploy SSH key
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
+      - name: Trust EC2 host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            APP_DIR="/home/ec2-user/Abhushan"
+            BRANCH="master"
+
+            echo "=== [admin] deploy started: $(date -u +%FT%TZ) ==="
+            cd "$APP_DIR"
+
+            echo "--- stashing any local changes (safety net, never destructive) ---"
+            git stash push -u -m "predeploy-$(date +%s)" || echo "nothing to stash"
+
+            echo "--- fetching origin/$BRANCH ---"
+            git fetch origin "$BRANCH"
+
+            echo "--- fast-forwarding to origin/$BRANCH (fails loudly if history diverged, never force-resets) ---"
+            git checkout "$BRANCH"
+            git merge --ff-only "origin/$BRANCH"
+
+            COMMIT_SHA="$(git rev-parse --short HEAD)"
+            echo "--- now at commit $COMMIT_SHA ---"
+
+            echo "--- installing dependencies (npm ci) ---"
+            npm ci
+
+            echo "--- building into a temporary directory (dist_new) ---"
+            rm -rf dist_new
+            npx vite build --outDir dist_new
+
+            echo "--- build succeeded — swapping into place atomically ---"
+            rm -rf dist_prev
+            if [ -d dist ]; then mv dist dist_prev; fi
+            mv dist_new dist
+
+            echo "--- validating nginx config ---"
+            sudo nginx -t
+
+            echo "--- reloading nginx ---"
+            sudo systemctl reload nginx
+
+            echo "=== [admin] deploy succeeded: commit $COMMIT_SHA at $(date -u +%FT%TZ) ==="
