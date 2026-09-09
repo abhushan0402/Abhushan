@@ -9,6 +9,7 @@ import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import StarOutlineOutlinedIcon from "@mui/icons-material/StarOutlineOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 
 export const navSections = [
   {
@@ -42,7 +43,10 @@ export const navSections = [
   },
   {
     title: "Administration",
-    items: [{ label: "Users & Roles", path: "/users", icon: AdminPanelSettingsOutlinedIcon, permission: "users:manage" }],
+    items: [
+      { label: "Metal rates", path: "/metal-rates", icon: MonetizationOnOutlinedIcon, permission: "metalRates:manage" },
+      { label: "Users & Roles", path: "/users", icon: AdminPanelSettingsOutlinedIcon, permission: "users:manage" },
+    ],
   },
 ];
 

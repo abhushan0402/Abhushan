@@ -27,7 +27,10 @@ export function AuthProvider({ children }) {
     const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
     const storedUser = readStoredUser();
     if (token && storedUser) {
-      setUser(storedUser);
+      // Recompute from the current role table rather than trusting the cached
+      // snapshot - otherwise a permission added after this user last logged in
+      // would silently never apply until they logged out and back in.
+      setUser({ ...storedUser, permissions: ROLE_PERMISSIONS[storedUser.role] ?? [] });
     }
     setIsInitializing(false);
   }, []);

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSnackbar } from "notistack";
 import {
+  Avatar,
   Box,
   Button,
   Card,
@@ -47,6 +48,12 @@ const schema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or fewer"),
   body: z.string().min(1, "Message is required").max(1000, "Message must be 1000 characters or fewer"),
   type: z.enum(NOTIFICATION_TYPES, { message: "Select a type" }),
+  // API field is `image: { format: "uri" }` - a hosted image URL, not a file
+  // upload (the endpoint only accepts application/json, no multipart).
+  image: z.string().optional().refine((value) => {
+    if (!value) return true;
+    return z.string().url().safeParse(value).success;
+  }, "Enter a valid image URL"),
   // The API's "data" field has no fixed shape (additionalProperties: {}) - it's
   // freeform, so it's entered as JSON text here and parsed before submitting.
   data: z.string().optional().refine((value) => {
@@ -83,24 +90,25 @@ export default function NotificationsPage() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system", data: "" } });
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system", image: "", data: "" } });
 
   const createNotification = useNotifications.useCreate({
-    onSuccess: () => {
-      enqueueSnackbar("Notification created", { variant: "success" });
+    onSuccess: (data) => {
+      enqueueSnackbar(data?.message ?? "Notification created", { variant: "success" });
       setCreateOpen(false);
       reset();
     },
-    onError: () => enqueueSnackbar("Failed to create notification", { variant: "error" }),
+    onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to create notification", { variant: "error" }),
   });
 
   const openCreate = () => {
-    reset({ title: "", body: "", type: "system", data: "" });
+    reset({ title: "", body: "", type: "system", image: "", data: "" });
     setCreateOpen(true);
   };
 
   const onSubmitNotification = (values) => {
-    const { data: rawData, ...payload } = values;
+    const { data: rawData, image, ...payload } = values;
+    if (image) payload.image = image;
     if (rawData) payload.data = JSON.parse(rawData);
     createNotification.mutate(payload);
   };
@@ -161,20 +169,24 @@ export default function NotificationsPage() {
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 44 }}>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: "50%",
-                          bgcolor: "background.default",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "primary.main",
-                        }}
-                      >
-                        <Icon fontSize="small" />
-                      </Box>
+                      {n.image ? (
+                        <Avatar src={n.image} variant="rounded" sx={{ width: 36, height: 36 }} />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: "50%",
+                            bgcolor: "background.default",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "primary.main",
+                          }}
+                        >
+                          <Icon fontSize="small" />
+                        </Box>
+                      )}
                     </ListItemIcon>
                     <ListItemText
                       primary={
@@ -241,6 +253,14 @@ export default function NotificationsPage() {
                   ))}
                 </TextField>
               )}
+            />
+            <TextField
+              label="Image URL (optional)"
+              fullWidth
+              placeholder="https://..."
+              error={Boolean(errors.image)}
+              helperText={errors.image?.message ?? "A hosted image URL - this endpoint doesn't accept a direct file upload."}
+              {...register("image")}
             />
             <TextField
               label="Extra data (JSON, optional)"

@@ -82,7 +82,7 @@ export default function OrderDetailPage() {
                   <TableRow key={item.productId ?? index}>
                     <TableCell>{item.productName}</TableCell>
                     <TableCell align="center">{item.quantity}</TableCell>
-                    <TableCell align="right">{item.weightGrams ?? "—"}</TableCell>
+                    <TableCell align="right">{item.weight ?? item.weightGrams ?? "—"}</TableCell>
                     <TableCell>{item.purity ?? "—"}</TableCell>
                     <TableCell align="right">{formatCurrency(item.pricePerUnit)}</TableCell>
                     <TableCell align="right">{formatCurrency((item.pricePerUnit ?? 0) * (item.quantity ?? 0))}</TableCell>
