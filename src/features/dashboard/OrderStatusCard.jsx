@@ -1,12 +1,14 @@
 import { Box, Card, LinearProgress, Skeleton, Stack, Typography } from "@mui/material";
 
+// Matches the real order status enum/colors used by StatusChip across the app.
 const STATUS_META = {
-  pending: { label: "Pending", color: "warning.main" },
-  processing: { label: "Processing", color: "info.main" },
-  shipped: { label: "Shipped", color: "accentGold.main" },
-  delivered: { label: "Delivered", color: "success.main" },
-  cancelled: { label: "Cancelled", color: "error.main" },
-  refunded: { label: "Refunded", color: "text.disabled" },
+  Placed: { label: "Placed", color: "info.main" },
+  Confirmed: { label: "Confirmed", color: "info.main" },
+  Packed: { label: "Packed", color: "info.main" },
+  Shipped: { label: "Shipped", color: "accentGold.main" },
+  "Out for Delivery": { label: "Out for Delivery", color: "warning.main" },
+  Delivered: { label: "Delivered", color: "success.main" },
+  Cancelled: { label: "Cancelled", color: "error.main" },
 };
 
 export function OrderStatusCard({ data, loading }) {

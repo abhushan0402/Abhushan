@@ -5,13 +5,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSnackbar } from "notistack";
 import {
+  Avatar,
   Button,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  Link,
   MenuItem,
+  Skeleton,
   Stack,
   TextField,
   Typography,
@@ -19,7 +23,9 @@ import {
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import DiamondOutlinedIcon from "@mui/icons-material/DiamondOutlined";
 import { GridActionsCellItem } from "@mui/x-data-grid";
+import { Link as RouterLink } from "react-router";
 import { DataGridCard } from "../../components/common/DataGridCard";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
 import { StatusChip } from "../../components/common/StatusChip";
@@ -27,7 +33,9 @@ import { ImagePickerField } from "../../components/common/ImagePickerField";
 import { useServerTable } from "../../hooks/useServerTable";
 import { useSubCategories } from "./api";
 import { useCategories } from "../categories/api";
+import { useProducts } from "../products/api";
 import { useAuth } from "../../auth/useAuth";
+import { formatCurrency } from "../../utils/format";
 
 const schema = z.object({
   name: z.string().min(2, "Subcategory name is required"),
@@ -86,6 +94,12 @@ export default function SubCategoriesPage() {
     },
     onError: (error) => enqueueSnackbar(error?.response?.data?.message ?? "Failed to update subcategory", { variant: "error" }),
   });
+  const { data: linkedProductsData, isLoading: loadingLinkedProducts } = useProducts.useList(
+    { subCategoryId: editing?.id, pageSize: 50 },
+    { enabled: Boolean(editing?.id) },
+  );
+  const linkedProducts = linkedProductsData?.data ?? [];
+
   const removeSubCategory = useSubCategories.useRemove({
     onSuccess: (data) => {
       enqueueSnackbar(data?.message ?? "Subcategory deleted", { variant: "success" });
@@ -204,7 +218,7 @@ export default function SubCategoriesPage() {
         onRowClick={(params) => navigate(`/products?categoryId=${params.row.categoryId}&subCategoryId=${params.id}`)}
       />
 
-      <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} maxWidth="xs" fullWidth>
+      <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 700 }}>{editing?.id ? "Edit subcategory" : "Add subcategory"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2.5} sx={{ mt: 0.5 }} component="form" id="subcategory-form" onSubmit={handleSubmit(onSubmit)}>
@@ -256,6 +270,62 @@ export default function SubCategoriesPage() {
               existingImageUrl={editing?.image}
             />
             <TextField label="Description" fullWidth multiline minRows={2} {...register("description")} />
+
+            {editing?.id && (
+              <>
+                <Divider />
+                <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Products in this subcategory
+                  </Typography>
+                  <Link
+                    component={RouterLink}
+                    to={`/products?categoryId=${editing.categoryId ?? ""}&subCategoryId=${editing.id}`}
+                    underline="hover"
+                    sx={{ fontWeight: 600, fontSize: "0.8125rem" }}
+                  >
+                    View all
+                  </Link>
+                </Stack>
+
+                {loadingLinkedProducts ? (
+                  <Stack spacing={1}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} height={40} />
+                    ))}
+                  </Stack>
+                ) : linkedProducts.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No products are attached to this subcategory yet.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1} sx={{ maxHeight: 220, overflowY: "auto" }}>
+                    {linkedProducts.map((product) => (
+                      <Stack key={product.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                        <Avatar
+                          variant="rounded"
+                          src={product.images?.[0]}
+                          sx={{ width: 32, height: 32, bgcolor: "primary.50", color: "primary.main" }}
+                        >
+                          <DiamondOutlinedIcon fontSize="small" />
+                        </Avatar>
+                        <Stack sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                            {product.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Stock: {product.stock ?? "—"}
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {formatCurrency(product.basePrice ?? 0)}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>

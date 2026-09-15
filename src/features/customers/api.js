@@ -1,18 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { httpClient } from "../../api/httpClient";
 
 /**
- * Customers are live on the real API, but via /api/admin/users - a single
- * unpaginated endpoint (no page/limit/search params) that returns every user,
- * admin and customer accounts mixed together. So this fetches the full list once
- * and does the role filter + search/sort/pagination client-side, returning the
- * same { data, total } shape `useServerTable`/`DataGridCard` expect from every
- * other (server-paginated) resource.
+ * Customers are live on the real API via /api/admin/users. This endpoint now
+ * supports real server-side pagination/search/role filtering (search, role,
+ * isActive, page, limit query params) and wraps its list the same way every
+ * other resource does - { users: [...], pagination: {...} } under `data` -
+ * rather than the flat unpaginated array it used to return.
  */
 const keys = {
   all: ["customers"],
   lists: () => ["customers", "list"],
   list: (params = {}) => ["customers", "list", params],
+  details: () => ["customers", "detail"],
+  detail: (id) => ["customers", "detail", id],
 };
 
 function normalizeCustomer(user) {
@@ -28,42 +29,92 @@ function normalizeCustomer(user) {
   };
 }
 
-function matchesSearch(customer, term) {
-  const needle = term.toLowerCase();
-  return [customer.name, customer.email, customer.phone].some((value) =>
-    String(value ?? "").toLowerCase().includes(needle),
-  );
-}
-
+// sortBy/sortDir aren't in the endpoint's supported param list (search, role,
+// isActive, page, limit) - dropped rather than sent, same as orders/api.js does
+// for the same reason.
 function useList(params = {}, options) {
-  const { page = 1, pageSize = 10, search, sortBy, sortDir = "asc" } = params;
+  const { page = 1, pageSize = 10, search } = params;
 
   return useQuery({
     queryKey: keys.list(params),
     queryFn: async ({ signal }) => {
-      const { data: body } = await httpClient.get("/admin/users", { signal });
-      let rows = (body?.data ?? []).filter((user) => user.role === "customer").map(normalizeCustomer);
-
-      if (search) {
-        rows = rows.filter((customer) => matchesSearch(customer, search));
-      }
-
-      if (sortBy) {
-        rows = [...rows].sort((a, b) => {
-          const av = a[sortBy];
-          const bv = b[sortBy];
-          const cmp =
-            typeof av === "number" && typeof bv === "number" ? av - bv : String(av ?? "").localeCompare(String(bv ?? ""));
-          return sortDir === "desc" ? -cmp : cmp;
-        });
-      }
-
-      const total = rows.length;
-      const start = (page - 1) * pageSize;
-      return { data: rows.slice(start, start + pageSize), total };
+      const { data: body } = await httpClient.get("/admin/users", {
+        params: { page, limit: pageSize, search, role: "customer" },
+        signal,
+      });
+      const payload = body?.data ?? {};
+      const rows = (payload.users ?? payload.items ?? (Array.isArray(payload) ? payload : [])).map(normalizeCustomer);
+      const total = payload.pagination?.total ?? payload.pagination?.totalCount ?? payload.total ?? rows.length;
+      return { data: rows, total };
     },
     ...options,
   });
 }
 
-export const useCustomers = { keys, useList };
+function pick(obj, ...keys) {
+  for (const key of keys) {
+    const value = obj?.[key];
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+// GET /admin/users/{userId} - "Get user profile, order history, and statistics".
+// Not strictly typed server-side (additionalProperties: true), so this reads
+// defensively across a few plausible key-naming variants for the order
+// history/stats section and normalizes into a stable shape for the detail view.
+function normalizeCustomerDetail(body) {
+  const data = body?.data ?? {};
+  const profile = data.user ?? data.profile ?? data;
+
+  const orders = (pick(data, "orders", "orderHistory", "recentOrders") ?? []).map((order) => ({
+    id: order.id ?? order._id,
+    orderNumber: order.orderNumber ?? `#${(order.id ?? order._id ?? "").toString().slice(-8).toUpperCase()}`,
+    total: order.total ?? order.totalAmount ?? 0,
+    status: order.status ?? order.orderStatus,
+    createdAt: order.createdAt,
+  }));
+
+  const stats = pick(data, "stats", "statistics") ?? {};
+
+  return {
+    ...normalizeCustomer(profile),
+    dateOfBirth: profile.dateOfBirth,
+    profileImage: profile.profileImage,
+    addresses: profile.addresses ?? [],
+    orders,
+    totalOrders: pick(stats, "totalOrders", "orderCount") ?? orders.length,
+    totalSpent: pick(stats, "totalSpent", "totalSpend", "lifetimeValue"),
+  };
+}
+
+function useDetail(id, options) {
+  return useQuery({
+    queryKey: keys.detail(id ?? ""),
+    queryFn: async ({ signal }) => {
+      const { data: body } = await httpClient.get(`/admin/users/${id}`, { signal });
+      return normalizeCustomerDetail(body);
+    },
+    enabled: Boolean(id),
+    ...options,
+  });
+}
+
+// Body: { isActive: boolean }.
+function useUpdateStatus(options = {}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, isActive }) => {
+      const { data: body } = await httpClient.patch(`/admin/users/${id}/status`, { isActive });
+      return body;
+    },
+    ...options,
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: keys.lists() });
+      queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
+      options.onSuccess?.(data, variables, onMutateResult, context);
+    },
+  });
+}
+
+export const useCustomers = { keys, useList, useDetail, useUpdateStatus };

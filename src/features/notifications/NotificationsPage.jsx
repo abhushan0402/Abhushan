@@ -31,6 +31,7 @@ import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { EmptyState } from "../../components/common/EmptyState";
+import { ImagePickerField } from "../../components/common/ImagePickerField";
 import { useNotifications } from "./api";
 import { formatRelativeTime } from "../../utils/format";
 
@@ -48,12 +49,7 @@ const schema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title must be 200 characters or fewer"),
   body: z.string().min(1, "Message is required").max(1000, "Message must be 1000 characters or fewer"),
   type: z.enum(NOTIFICATION_TYPES, { message: "Select a type" }),
-  // API field is `image: { format: "uri" }` - a hosted image URL, not a file
-  // upload (the endpoint only accepts application/json, no multipart).
-  image: z.string().optional().refine((value) => {
-    if (!value) return true;
-    return z.string().url().safeParse(value).success;
-  }, "Enter a valid image URL"),
+  image: z.any().optional(),
   // The API's "data" field has no fixed shape (additionalProperties: {}) - it's
   // freeform, so it's entered as JSON text here and parsed before submitting.
   data: z.string().optional().refine((value) => {
@@ -89,8 +85,11 @@ export default function NotificationsPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system", image: "", data: "" } });
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", body: "", type: "system", data: "" } });
+  const selectedImageFile = watch("image")?.[0];
 
   const createNotification = useNotifications.useCreate({
     onSuccess: (data) => {
@@ -102,14 +101,14 @@ export default function NotificationsPage() {
   });
 
   const openCreate = () => {
-    reset({ title: "", body: "", type: "system", image: "", data: "" });
+    reset({ title: "", body: "", type: "system", data: "" });
     setCreateOpen(true);
   };
 
   const onSubmitNotification = (values) => {
     const { data: rawData, image, ...payload } = values;
-    if (image) payload.image = image;
-    if (rawData) payload.data = JSON.parse(rawData);
+    if (image?.[0]) payload.image = image[0];
+    if (rawData) payload.data = rawData;
     createNotification.mutate(payload);
   };
 
@@ -254,14 +253,7 @@ export default function NotificationsPage() {
                 </TextField>
               )}
             />
-            <TextField
-              label="Image URL (optional)"
-              fullWidth
-              placeholder="https://..."
-              error={Boolean(errors.image)}
-              helperText={errors.image?.message ?? "A hosted image URL - this endpoint doesn't accept a direct file upload."}
-              {...register("image")}
-            />
+            <ImagePickerField register={register} setValue={setValue} name="image" selectedFile={selectedImageFile} label="Choose image (optional)" />
             <TextField
               label="Extra data (JSON, optional)"
               fullWidth

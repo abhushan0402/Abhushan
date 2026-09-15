@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Avatar, Stack, Typography } from "@mui/material";
 import { DataGridCard } from "../../components/common/DataGridCard";
 import { StatusChip } from "../../components/common/StatusChip";
+import { CustomerDetailDialog } from "./CustomerDetailDialog";
 import { useServerTable } from "../../hooks/useServerTable";
 import { useCustomers } from "./api";
 import { formatDate, getInitials } from "../../utils/format";
 
 export default function CustomersPage() {
   const table = useServerTable(useCustomers, { sortBy: "createdAt", sortDir: "desc" });
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
   const columns = [
     {
@@ -45,23 +48,28 @@ export default function CustomersPage() {
   ];
 
   return (
-    <DataGridCard
-      title="Customers"
-      subtitle="Your jewellery shop's clientele"
-      rows={table.rows}
-      columns={columns}
-      getRowId={(row) => row.id}
-      rowCount={table.rowCount}
-      loading={table.isLoading || table.isFetching}
-      page={table.page}
-      pageSize={table.pageSize}
-      onPageChange={table.setPage}
-      onPageSizeChange={table.setPageSize}
-      sortModel={table.sortModel}
-      onSortModelChange={table.setSortModel}
-      search={table.search}
-      onSearchChange={table.setSearch}
-      searchPlaceholder="Search by name, email, phone..."
-    />
+    <>
+      <DataGridCard
+        title="Customers"
+        subtitle="Your jewellery shop's clientele"
+        rows={table.rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        rowCount={table.rowCount}
+        loading={table.isLoading || table.isFetching}
+        page={table.page}
+        pageSize={table.pageSize}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.setPageSize}
+        sortModel={table.sortModel}
+        onSortModelChange={table.setSortModel}
+        search={table.search}
+        onSearchChange={table.setSearch}
+        searchPlaceholder="Search by name, email, phone..."
+        onRowClick={(params) => setSelectedCustomerId(params.id)}
+      />
+
+      <CustomerDetailDialog customerId={selectedCustomerId} onClose={() => setSelectedCustomerId(null)} />
+    </>
   );
 }

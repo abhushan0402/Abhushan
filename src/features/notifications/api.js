@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { httpClient } from "../../api/httpClient";
+import { toFormData, MULTIPART_HEADERS } from "../../utils/formData";
 
 /**
  * Notifications are live on the real API (see swagger: /api/notifications).
@@ -42,13 +43,15 @@ function useList(params = {}, options) {
   });
 }
 
-// Body: { title (1-200 chars), body (1-1000 chars), type: order|promo|system|payment, data? }.
+// Body: { title (1-200 chars), body (1-1000 chars), type: order|promo|system|payment, image? (file), data? }.
+// Sent as multipart/form-data so `image` can be a real uploaded file (see swagger:
+// "Supports multipart/form-data for image upload or JSON with image URL").
 function useCreate(options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload) => {
-      const { data: body } = await httpClient.post("/notifications/", payload);
-      return normalizeNotification(body?.data);
+      const { data: body } = await httpClient.post("/notifications/", toFormData(payload), MULTIPART_HEADERS);
+      return { ...normalizeNotification(body?.data), message: body?.message };
     },
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {
