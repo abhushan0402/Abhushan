@@ -92,7 +92,11 @@ function useUpdate(options = {}) {
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.invalidateQueries({ queryKey: keys.lists() });
-      queryClient.setQueryData(keys.detail(variables.id), data);
+      // Not setQueryData(data) from the PATCH response - some update endpoints on
+      // this API echo back the pre-update document (e.g. a findByIdAndUpdate call
+      // without {new: true} server-side), which would otherwise cache and display
+      // stale values right after a successful save. Invalidating forces a fresh GET.
+      queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
       options.onSuccess?.(data, variables, onMutateResult, context);
     },
   });

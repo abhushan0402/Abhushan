@@ -39,6 +39,13 @@ export default function OrdersPage() {
       renderCell: (params) => <StatusChip status={params.row.orderStatus} />,
     },
     {
+      field: "paymentStatus",
+      headerName: "Payment",
+      flex: 0.6,
+      minWidth: 120,
+      renderCell: (params) => (params.row.paymentStatus ? <StatusChip status={params.row.paymentStatus} /> : "—"),
+    },
+    {
       field: "createdAt",
       headerName: "Placed on",
       flex: 0.7,

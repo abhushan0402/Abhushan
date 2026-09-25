@@ -35,13 +35,14 @@ export function RecentOrdersCard({ data, loading }) {
             <TableCell>Order</TableCell>
             <TableCell>Amount</TableCell>
             <TableCell>Status</TableCell>
+            <TableCell>Payment</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {loading &&
             Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
-                <TableCell colSpan={3}>
+                <TableCell colSpan={4}>
                   <Skeleton height={32} />
                 </TableCell>
               </TableRow>
@@ -72,6 +73,7 @@ export function RecentOrdersCard({ data, loading }) {
                 <TableCell>
                   <StatusChip status={order.status} />
                 </TableCell>
+                <TableCell>{order.paymentStatus ? <StatusChip status={order.paymentStatus} /> : "—"}</TableCell>
               </TableRow>
             ))}
         </TableBody>

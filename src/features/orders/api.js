@@ -22,6 +22,11 @@ function normalizeOrder(row) {
     customerName: customer ? `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() : row.customerName,
     customerEmail: customer?.email ?? row.customerEmail,
     customerPhone: customer?.mobile ?? row.customerPhone,
+    // Field name isn't declared in swagger (order schema is additionalProperties:
+    // true) - reads a few plausible shapes and falls back to the isPaid boolean
+    // the payments endpoints imply exists.
+    paymentStatus:
+      row.paymentStatus ?? row.payment?.status ?? (row.isPaid != null ? (row.isPaid ? "paid" : "unpaid") : undefined),
   };
 }
 
@@ -77,7 +82,10 @@ function useUpdateStatus(options = {}) {
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.invalidateQueries({ queryKey: keys.lists() });
-      queryClient.setQueryData(keys.detail(variables.id), data);
+      // Invalidate rather than setQueryData(data) from the PATCH response - if the
+      // endpoint ever echoes back a pre-update document, trusting it would cache
+      // stale values right after a successful save.
+      queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
       options.onSuccess?.(data, variables, onMutateResult, context);
     },
   });

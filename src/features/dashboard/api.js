@@ -34,6 +34,8 @@ function normalizeDashboard(body) {
       customerName: order.customerName ?? (customer ? `${customer.firstName ?? ""} ${customer.lastName ?? ""}`.trim() : ""),
       total: order.total ?? order.totalAmount ?? 0,
       status: order.status ?? order.orderStatus,
+      paymentStatus:
+        order.paymentStatus ?? order.payment?.status ?? (order.isPaid != null ? (order.isPaid ? "paid" : "unpaid") : undefined),
     };
   });
 

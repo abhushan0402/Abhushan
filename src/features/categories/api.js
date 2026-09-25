@@ -77,7 +77,10 @@ function useUpdate(options = {}) {
     ...options,
     onSuccess: (data, variables, onMutateResult, context) => {
       queryClient.invalidateQueries({ queryKey: keys.lists() });
-      queryClient.setQueryData(keys.detail(variables.id), data);
+      // Invalidate rather than setQueryData(data) from the PATCH response - if the
+      // endpoint ever echoes back a pre-update document, trusting it would cache
+      // stale values right after a successful save.
+      queryClient.invalidateQueries({ queryKey: keys.detail(variables.id) });
       options.onSuccess?.(data, variables, onMutateResult, context);
     },
   });
