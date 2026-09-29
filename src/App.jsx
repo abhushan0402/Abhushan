@@ -17,6 +17,7 @@ import OffersPage from "./features/offers/OffersPage";
 import ReviewsPage from "./features/reviews/ReviewsPage";
 import NotificationsPage from "./features/notifications/NotificationsPage";
 import MetalRatesPage from "./features/metalRates/MetalRatesPage";
+import WorkerRatesPage from "./features/workerRates/WorkerRatesPage";
 import UsersPage from "./features/users/UsersPage";
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="metal-rates" element={<MetalRatesPage />} />
+            <Route path="worker-rates" element={<WorkerRatesPage />} />
             <Route path="users" element={<UsersPage />} />
           </Route>
         </Route>

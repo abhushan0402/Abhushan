@@ -18,6 +18,7 @@ export const ROLE_PERMISSIONS = {
     "offers:manage",
     "notifications:manage",
     "metalRates:manage",
+    "workerRates:manage",
     "users:manage",
   ],
   admin: [
@@ -35,6 +36,7 @@ export const ROLE_PERMISSIONS = {
     "offers:manage",
     "notifications:manage",
     "metalRates:manage",
+    "workerRates:manage",
   ],
   manager: [
     "dashboard:view",
@@ -49,6 +51,7 @@ export const ROLE_PERMISSIONS = {
     "offers:manage",
     "notifications:manage",
     "metalRates:manage",
+    "workerRates:manage",
   ],
   staff: ["dashboard:view", "products:view", "orders:view", "customers:view", "billing:view"],
 };

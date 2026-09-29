@@ -40,6 +40,7 @@ export default function ProductsPage() {
   const [subCategoryFilter, setSubCategoryFilter] = useState(searchParams.get("subCategoryId") ?? "all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tagFilter, setTagFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const activeTag = PRODUCT_TAGS.find((tag) => tag.filterValue === tagFilter);
@@ -51,6 +52,7 @@ export default function ProductsPage() {
       categoryId: categoryFilter === "all" ? undefined : categoryFilter,
       subCategoryId: subCategoryFilter === "all" ? undefined : subCategoryFilter,
       isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+      stockStatus: stockFilter === "all" ? undefined : stockFilter,
       ...(activeTag && { [activeTag.field]: true }),
     },
   });
@@ -225,6 +227,11 @@ export default function ProductsPage() {
               <MenuItem value="all">All status</MenuItem>
               <MenuItem value="active">Active</MenuItem>
               <MenuItem value="inactive">Inactive</MenuItem>
+            </TextField>
+            <TextField select size="small" label="Stock" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} sx={{ minWidth: 140 }}>
+              <MenuItem value="all">All stock</MenuItem>
+              <MenuItem value="in-stock">In stock</MenuItem>
+              <MenuItem value="out-of-stock">Out of stock</MenuItem>
             </TextField>
             <TextField select size="small" label="Tag" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} sx={{ minWidth: 140 }}>
               <MenuItem value="all">All tags</MenuItem>
