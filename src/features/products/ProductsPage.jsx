@@ -16,15 +16,7 @@ import { useSubCategories } from "../subcategories/api";
 import { useAuth } from "../../auth/useAuth";
 import { formatCurrency } from "../../utils/format";
 import { useSnackbar } from "notistack";
-
-// Single source of truth for the tag filter dropdown and the Tags column - each
-// chip only renders when its field is actually true on the product.
-const PRODUCT_TAGS = [
-  { field: "isTrending", filterValue: "trending", label: "Trending", color: "warning" },
-  { field: "isFeatured", filterValue: "featured", label: "Featured", color: "info" },
-  { field: "isBestSeller", filterValue: "bestseller", label: "Best seller", color: "success" },
-  { field: "isNewArrival", filterValue: "newarrival", label: "New arrival", color: "primary" },
-];
+import { PRODUCT_TAGS } from "./productTags";
 
 export default function ProductsPage() {
   const navigate = useNavigate();

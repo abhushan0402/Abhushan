@@ -2,6 +2,8 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import DiamondOutlinedIcon from "@mui/icons-material/DiamondOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -21,6 +23,8 @@ export const navSections = [
     title: "Catalogue",
     items: [
       { label: "Products", path: "/products", icon: DiamondOutlinedIcon, permission: "products:view" },
+      { label: "Featured & Arrivals", path: "/products/merchandising", icon: WorkspacePremiumOutlinedIcon, permission: "products:view" },
+      { label: "Out of stock", path: "/products/out-of-stock", icon: ReportProblemOutlinedIcon, permission: "products:view" },
       { label: "Categories", path: "/categories", icon: CategoryOutlinedIcon, permission: "categories:manage" },
       { label: "Subcategories", path: "/subcategories", icon: CategoryOutlinedIcon, permission: "categories:manage" },
       { label: "Inventory", path: "/inventory", icon: Inventory2OutlinedIcon, permission: "inventory:manage" },

@@ -33,10 +33,20 @@ function SidebarContent() {
       <Divider />
 
       <Box sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 1.5 }}>
-        {navSections.map((section) => {
-          const visibleItems = section.items.filter((item) => hasPermission(item.permission));
-          if (!visibleItems.length) return null;
-          return (
+        {(() => {
+          // Pick the longest matching path across *all* nav items, not just
+          // within a section, so a nested route (e.g. /products/out-of-stock)
+          // highlights only its own item rather than also lighting up the
+          // shorter /products entry.
+          const allPaths = navSections.flatMap((section) => section.items.map((item) => item.path));
+          const bestMatch = allPaths
+            .filter((path) => (path === "/" ? location.pathname === "/" : location.pathname.startsWith(path)))
+            .sort((a, b) => b.length - a.length)[0];
+
+          return navSections.map((section) => {
+            const visibleItems = section.items.filter((item) => hasPermission(item.permission));
+            if (!visibleItems.length) return null;
+            return (
             <Box key={section.title} sx={{ mb: 2 }}>
               <Typography
                 variant="caption"
@@ -53,8 +63,7 @@ function SidebarContent() {
               </Typography>
               <List dense disablePadding>
                 {visibleItems.map((item) => {
-                  const active =
-                    item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
+                  const active = item.path === bestMatch;
                   const Icon = item.icon;
                   return (
                     <ListItemButton
@@ -90,8 +99,9 @@ function SidebarContent() {
                 })}
               </List>
             </Box>
-          );
-        })}
+            );
+          });
+        })()}
       </Box>
 
       <Divider />

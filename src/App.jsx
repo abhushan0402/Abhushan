@@ -6,6 +6,8 @@ import LoginPage from "./auth/LoginPage";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import ProductsPage from "./features/products/ProductsPage";
 import ProductFormPage from "./features/products/ProductFormPage";
+import MerchandisingPage from "./features/products/MerchandisingPage";
+import OutOfStockPage from "./features/products/OutOfStockPage";
 import CategoriesPage from "./features/categories/CategoriesPage";
 import SubCategoriesPage from "./features/subcategories/SubCategoriesPage";
 import InventoryPage from "./features/inventory/InventoryPage";
@@ -32,6 +34,8 @@ export default function App() {
 
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/new" element={<ProductFormPage />} />
+            <Route path="products/merchandising" element={<MerchandisingPage />} />
+            <Route path="products/out-of-stock" element={<OutOfStockPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
 
             <Route path="categories" element={<CategoriesPage />} />
