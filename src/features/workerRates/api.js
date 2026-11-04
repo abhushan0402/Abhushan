@@ -2,25 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { httpClient } from "../../api/httpClient";
 
 /**
- * Worker (making-charge) jewellery rates - see swagger: /api/admin/worker-rates.
- * The PUT body confirms the shape: { rates: [{ code, ratePerGram }], gstPercentage }.
- * GET's response schema isn't declared, so this reads defensively, assuming it
- * mirrors the PUT body - every other resource on this API follows that convention.
+ * GST is the only thing left on the legacy settings-style endpoint (see swagger:
+ * /api/admin/worker-rates) - gold/silver making-charge rates moved to the dynamic
+ * product CRUD below. GET's response schema isn't declared, so this reads
+ * defensively, assuming it mirrors the PUT body - every other resource on this API
+ * follows that convention.
  */
-export const RATE_CODES = [
-  { code: "gold_adore", label: "Gold - Adore" },
-  { code: "gold_riwaaz", label: "Gold - Riwaaz" },
-  { code: "gold_cutting_casting", label: "Gold - Cutting & Casting" },
-  { code: "gold_regular", label: "Gold - Regular" },
-  { code: "gold_18k", label: "Gold - 18K" },
-  { code: "gold_9k", label: "Gold - 9K" },
-  { code: "silver_pure", label: "Silver - Pure" },
-  { code: "silver_premium", label: "Silver - Premium" },
-  { code: "silver_ring_bichiya", label: "Silver - Ring/Bichiya" },
-  { code: "silver_60t", label: "Silver - 60T" },
-];
-
-const keys = { detail: ["workerRates"] };
+const keys = { detail: ["workerRates", "gst"] };
 
 function useDetail(options) {
   return useQuery({
@@ -28,10 +16,7 @@ function useDetail(options) {
     queryFn: async ({ signal }) => {
       const { data: body } = await httpClient.get("/admin/worker-rates", { signal });
       const payload = body?.data ?? {};
-      const rates = payload.rates ?? [];
-      const rateByCode = Object.fromEntries(rates.map((r) => [r.code, r.ratePerGram]));
       return {
-        rateByCode,
         gstPercentage: payload.gstPercentage ?? payload.gst ?? 3,
         updatedAt: payload.updatedAt,
       };
@@ -40,7 +25,7 @@ function useDetail(options) {
   });
 }
 
-// Body: { rates?: [{ code, ratePerGram }] (1-10 items), gstPercentage? }.
+// Body: { gstPercentage }.
 function useUpdate(options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -57,3 +42,90 @@ function useUpdate(options = {}) {
 }
 
 export const useWorkerRates = { keys, useDetail, useUpdate };
+
+/**
+ * Dynamic gold/silver worker-rate products - see handoff contract:
+ * GET/POST/PUT/DELETE /api/admin/worker-rates/products.
+ */
+export const PRODUCT_CATEGORIES = ["GOLD", "SILVER"];
+
+const productKeys = { list: ["workerRateProducts"] };
+
+function normalizeProduct(row) {
+  if (!row) return row;
+  return {
+    id: row.id ?? row._id,
+    productName: row.productName,
+    category: row.category,
+    workerRate: row.workerRate,
+    makingCharge: row.makingCharge ?? null,
+    isActive: row.isActive ?? true,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function useProductList(options) {
+  return useQuery({
+    queryKey: productKeys.list,
+    queryFn: async ({ signal }) => {
+      const { data: body } = await httpClient.get("/admin/worker-rates/products", { signal });
+      const rows = body?.data?.products ?? body?.data ?? [];
+      return rows.map(normalizeProduct);
+    },
+    ...options,
+  });
+}
+
+function useCreateProduct(options = {}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const { data: body } = await httpClient.post("/admin/worker-rates/products", payload);
+      return { ...normalizeProduct(body?.data), message: body?.message };
+    },
+    ...options,
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.list });
+      options.onSuccess?.(data, variables, onMutateResult, context);
+    },
+  });
+}
+
+function useUpdateProduct(options = {}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const { data: body } = await httpClient.put(`/admin/worker-rates/products/${id}`, data);
+      return { ...normalizeProduct(body?.data), message: body?.message };
+    },
+    ...options,
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.list });
+      options.onSuccess?.(data, variables, onMutateResult, context);
+    },
+  });
+}
+
+function useRemoveProduct(options = {}) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => {
+      const { data: body } = await httpClient.delete(`/admin/worker-rates/products/${id}`);
+      return body;
+    },
+    ...options,
+    onSuccess: (data, variables, onMutateResult, context) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.list });
+      options.onSuccess?.(data, variables, onMutateResult, context);
+    },
+  });
+}
+
+export const useWorkerRateProducts = {
+  keys: productKeys,
+  useList: useProductList,
+  useCreate: useCreateProduct,
+  useUpdate: useUpdateProduct,
+  useRemove: useRemoveProduct,
+};

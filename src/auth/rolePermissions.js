@@ -20,6 +20,7 @@ export const ROLE_PERMISSIONS = {
     "metalRates:manage",
     "workerRates:manage",
     "users:manage",
+    "appVersion:manage",
   ],
   admin: [
     "dashboard:view",
@@ -37,6 +38,7 @@ export const ROLE_PERMISSIONS = {
     "notifications:manage",
     "metalRates:manage",
     "workerRates:manage",
+    "appVersion:manage",
   ],
   manager: [
     "dashboard:view",

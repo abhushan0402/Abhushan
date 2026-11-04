@@ -13,6 +13,7 @@ import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNone
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
 import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
+import SystemUpdateAltOutlinedIcon from "@mui/icons-material/SystemUpdateAltOutlined";
 
 export const navSections = [
   {
@@ -52,6 +53,7 @@ export const navSections = [
       { label: "Metal rates", path: "/metal-rates", icon: MonetizationOnOutlinedIcon, permission: "metalRates:manage" },
       { label: "Worker rates", path: "/worker-rates", icon: EngineeringOutlinedIcon, permission: "workerRates:manage" },
       { label: "Users & Roles", path: "/users", icon: AdminPanelSettingsOutlinedIcon, permission: "users:manage" },
+      { label: "App version", path: "/app-version", icon: SystemUpdateAltOutlinedIcon, permission: "appVersion:manage" },
     ],
   },
 ];
