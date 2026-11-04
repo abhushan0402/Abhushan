@@ -44,8 +44,10 @@ function useUpdate(options = {}) {
 export const useWorkerRates = { keys, useDetail, useUpdate };
 
 /**
- * Dynamic gold/silver worker-rate products - see handoff contract:
- * GET/POST/PUT/DELETE /api/admin/worker-rates/products.
+ * Dynamic gold/silver worker-rate products (see WORKER_RATE_API.md):
+ * GET /api/worker-rates/products is public; POST/PUT/DELETE need an admin
+ * bearer token. Listing returns a plain array under `data` and identifies
+ * products by `_id` - normalizeProduct() below bridges both to `id`.
  */
 export const PRODUCT_CATEGORIES = ["GOLD", "SILVER"];
 
@@ -69,7 +71,7 @@ function useProductList(options) {
   return useQuery({
     queryKey: productKeys.list,
     queryFn: async ({ signal }) => {
-      const { data: body } = await httpClient.get("/admin/worker-rates/products", { signal });
+      const { data: body } = await httpClient.get("/worker-rates/products", { signal });
       const rows = body?.data?.products ?? body?.data ?? [];
       return rows.map(normalizeProduct);
     },
@@ -81,7 +83,7 @@ function useCreateProduct(options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload) => {
-      const { data: body } = await httpClient.post("/admin/worker-rates/products", payload);
+      const { data: body } = await httpClient.post("/worker-rates/products", payload);
       return { ...normalizeProduct(body?.data), message: body?.message };
     },
     ...options,
@@ -96,7 +98,7 @@ function useUpdateProduct(options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }) => {
-      const { data: body } = await httpClient.put(`/admin/worker-rates/products/${id}`, data);
+      const { data: body } = await httpClient.put(`/worker-rates/products/${id}`, data);
       return { ...normalizeProduct(body?.data), message: body?.message };
     },
     ...options,
@@ -111,7 +113,7 @@ function useRemoveProduct(options = {}) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id) => {
-      const { data: body } = await httpClient.delete(`/admin/worker-rates/products/${id}`);
+      const { data: body } = await httpClient.delete(`/worker-rates/products/${id}`);
       return body;
     },
     ...options,
