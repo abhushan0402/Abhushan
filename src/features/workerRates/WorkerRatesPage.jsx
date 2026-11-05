@@ -38,7 +38,11 @@ const productSchema = z.object({
   // coerced to 0 - z.coerce.number() on "" would otherwise silently succeed.
   makingCharge: z.preprocess(
     (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.coerce.number().min(0, "Making charge can't be negative").optional(),
+    z.coerce
+      .number()
+      .min(0, "Making charge can't be negative")
+      .max(100, "Making charge can't exceed 100%")
+      .optional(),
   ),
 });
 
@@ -61,7 +65,7 @@ function ProductRow({ product, canManage, onEdit, onDelete }) {
           </Typography>
           {product.makingCharge != null && (
             <Typography variant="caption" color="text.secondary">
-              Making charge: {formatCurrency(product.makingCharge)}
+              Making charge: {product.makingCharge}%
             </Typography>
           )}
         </Stack>
@@ -312,12 +316,12 @@ export default function WorkerRatesPage() {
               {...register("workerRate")}
             />
             <TextField
-              label="Making/marking charge (optional)"
+              label="Making charge % (optional)"
               type="number"
               fullWidth
-              slotProps={{ input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> }, htmlInput: { step: "any" } }}
+              slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> }, htmlInput: { step: "any", min: 0, max: 100 } }}
               error={Boolean(errors.makingCharge)}
-              helperText={errors.makingCharge?.message}
+              helperText={errors.makingCharge?.message ?? "Applied on the gold amount before GST"}
               {...register("makingCharge")}
             />
           </Stack>
